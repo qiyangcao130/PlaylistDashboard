@@ -14,6 +14,7 @@ import type { DashboardData, PlaylistWithTracks, Track } from "@/lib/types";
 import {
   addTrackToPlaylistAction,
   createPlaylistAction,
+  deletePlaylistAction,
   deleteTrackAction,
   logoutAction,
   removeTrackFromPlaylistAction,
@@ -229,6 +230,22 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
     });
   };
 
+  const handleDeletePlaylist = (playlistId: string) => {
+    startTransition(() => {
+      deletePlaylistAction(playlistId).then((result: ActionResult) => {
+        if (result.success) {
+          toast.success("Playlist deleted");
+          // Close the sheet and reset active playlist
+          setPlaylistSheetOpen(false);
+          setActivePlaylistId(playlists.find(p => p.id !== playlistId)?.id ?? null);
+          router.refresh();
+        } else if (result.error) {
+          toast.error(result.error);
+        }
+      });
+    });
+  };
+
   const handleLogout = () => {
     startTransition(() => {
       logoutAction().then(() => {
@@ -291,6 +308,7 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
                   onRemoveTrack={handleRemoveTrack}
                   onReorderTracks={handleReorderTracks}
                   onUpdatePlaylist={handleUpdatePlaylist}
+                  onDeletePlaylist={handleDeletePlaylist}
                 />
               ) : (
                 <p className="text-sm text-slate-500">Select a playlist to view its details.</p>
@@ -327,6 +345,7 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
                 onRemoveTrack={handleRemoveTrack}
                 onReorderTracks={handleReorderTracks}
                 onUpdatePlaylist={handleUpdatePlaylist}
+                onDeletePlaylist={handleDeletePlaylist}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-slate-500">

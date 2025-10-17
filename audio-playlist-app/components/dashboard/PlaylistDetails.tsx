@@ -6,6 +6,17 @@ import type { PlaylistWithTracks, Track } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -15,9 +26,10 @@ interface PlaylistDetailsProps {
   onRemoveTrack(trackId: string, playlistId: string): void;
   onReorderTracks(playlistId: string, trackIds: string[]): void;
   onUpdatePlaylist(playlistId: string, updates: { name?: string; description?: string | null }): void;
+  onDeletePlaylist(playlistId: string): void;
 }
 
-export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorderTracks, onUpdatePlaylist }: PlaylistDetailsProps) {
+export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorderTracks, onUpdatePlaylist, onDeletePlaylist }: PlaylistDetailsProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editedName, setEditedName] = useState(playlist.name);
@@ -104,6 +116,28 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
               </Button>
             </div>
           )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="destructive" className="gap-2">
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Delete Playlist</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Playlist?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete "{playlist.name}"? This action cannot be undone. All tracks will be removed from this playlist.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDeletePlaylist(playlist.id)} className="bg-red-600 hover:bg-red-700">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
         <div>
           {isEditingDescription ? (

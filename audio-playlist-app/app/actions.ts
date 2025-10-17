@@ -96,6 +96,10 @@ export async function uploadTrackAction(prev: ActionResult, formData: FormData):
     return { success: false, error: parsedMeta.error.issues[0]?.message ?? "Invalid form fields" };
   }
 
+  // Extract duration if provided
+  const durationString = formData.get("duration");
+  const duration = durationString && typeof durationString === "string" ? parseFloat(durationString) : null;
+
   const file = formData.get("file");
 
   if (!isFileLike(file)) {
@@ -121,21 +125,62 @@ export async function uploadTrackAction(prev: ActionResult, formData: FormData):
     return { success: false, error: uploadError.message };
   }
 
+  // Handle optional cover art upload
+  let coverArtUrl: string | null = null;
+  const coverFile = formData.get("cover");
+  
+  if (isFileLike(coverFile) && coverFile.type.startsWith("image")) {
+    // Validate image size (5MB max)
+    const maxSize = 5 * 1024 * 1024;
+    if (coverFile.size > maxSize) {
+      // Clean up audio file if cover upload fails validation
+      await supabase.storage.from(SUPABASE_STORAGE_BUCKET).remove([path]);
+      return { success: false, error: "Cover image must be less than 5 MB" };
+    }
+
+    const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
+    const coverExtension = coverFile.name.split(".").pop() ?? "jpg";
+    const coverPath = `${SUPABASE_STORAGE_PREFIX}/covers/${randomUUID()}-${Date.now()}.${coverExtension}`;
+
+    const { error: coverUploadError } = await supabase.storage.from(SUPABASE_STORAGE_BUCKET).upload(coverPath, coverBuffer, {
+      contentType: coverFile.type,
+      cacheControl: "3600",
+      upsert: false
+    });
+
+    if (coverUploadError) {
+      // Clean up audio file if cover upload fails
+      await supabase.storage.from(SUPABASE_STORAGE_BUCKET).remove([path]);
+      return { success: false, error: `Failed to upload cover: ${coverUploadError.message}` };
+    }
+
+    // Get public URL for the cover art
+    const { data: publicUrlData } = supabase.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(coverPath);
+    coverArtUrl = publicUrlData.publicUrl;
+  }
+
   const audioPayload: Database["public"]["Tables"]["audio_files"]["Insert"] = {
     username: session.username,
     title: parsedMeta.data.title,
     artist: parsedMeta.data.artist ?? null,
     album: parsedMeta.data.album ?? null,
     storage_path: path,
+    cover_art_url: coverArtUrl,
     content_type: file.type,
     file_size: file.size,
-    duration_seconds: null
+    duration_seconds: duration
   };
 
   // Supabase client schema typing still resolving in generated types, so fall back to any for now.
   const { error: insertError } = await (supabase.from("audio_files") as any).insert(audioPayload);
 
   if (insertError) {
+    // Clean up uploaded files if database insert fails
+    await supabase.storage.from(SUPABASE_STORAGE_BUCKET).remove([path]);
+    if (coverArtUrl) {
+      const coverPathFromUrl = coverArtUrl.split('/').slice(-3).join('/');
+      await supabase.storage.from(SUPABASE_STORAGE_BUCKET).remove([coverPathFromUrl]);
+    }
     return { success: false, error: insertError.message };
   }
 
