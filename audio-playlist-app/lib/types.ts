@@ -29,4 +29,5 @@ export interface PlaylistWithTracks extends Playlist {
 export interface DashboardData {
   tracks: Track[];
   playlists: PlaylistWithTracks[];
+  canModify: boolean;
 }

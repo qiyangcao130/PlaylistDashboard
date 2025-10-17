@@ -27,9 +27,10 @@ interface PlaylistDetailsProps {
   onReorderTracks(playlistId: string, trackIds: string[]): void;
   onUpdatePlaylist(playlistId: string, updates: { name?: string; description?: string | null }): void;
   onDeletePlaylist(playlistId: string): void;
+  canModify?: boolean;
 }
 
-export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorderTracks, onUpdatePlaylist, onDeletePlaylist }: PlaylistDetailsProps) {
+export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorderTracks, onUpdatePlaylist, onDeletePlaylist, canModify = true }: PlaylistDetailsProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editedName, setEditedName] = useState(playlist.name);
@@ -111,12 +112,15 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
           ) : (
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-semibold text-slate-900">{playlist.name}</h1>
-              <Button size="icon" variant="ghost" className="text-slate-400 hover:text-slate-600" onClick={() => setIsEditingName(true)}>
-                <Pencil className="h-4 w-4" />
-              </Button>
+              {canModify && (
+                <Button size="icon" variant="ghost" className="text-slate-400 hover:text-slate-600" onClick={() => setIsEditingName(true)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           )}
-          <AlertDialog>
+          {canModify && (
+            <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button size="sm" variant="destructive" className="gap-2">
                 <Trash2 className="h-4 w-4" />
@@ -138,6 +142,7 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          )}
         </div>
         <div>
           {isEditingDescription ? (
@@ -159,9 +164,11 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
           ) : (
             <div className="flex items-start gap-2 text-sm text-slate-600">
               <p>{playlist.description || "No description yet."}</p>
-              <Button size="icon" variant="ghost" className="text-slate-400 hover:text-slate-600" onClick={() => setIsEditingDescription(true)}>
-                <Pencil className="h-4 w-4" />
-              </Button>
+              {canModify && (
+                <Button size="icon" variant="ghost" className="text-slate-400 hover:text-slate-600" onClick={() => setIsEditingDescription(true)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -179,7 +186,7 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
           playlist.tracks.map((track, index) => (
             <div
               key={track.id}
-              draggable
+              draggable={canModify}
               onDragStart={() => handleDragStart(index)}
               onDragEnter={() => handleDragEnter(index)}
               onDrop={handleDrop}
@@ -191,9 +198,11 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
             >
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-6 items-center justify-center text-xs text-slate-500">{index + 1}</span>
-                <button className="hidden rounded-md p-2 text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 lg:flex">
-                  <GripVertical className="h-4 w-4" />
-                </button>
+                {canModify && (
+                  <button className="hidden rounded-md p-2 text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 lg:flex">
+                    <GripVertical className="h-4 w-4" />
+                  </button>
+                )}
               </div>
               {track.coverArtUrl ? (
                 <Image src={track.coverArtUrl} alt={track.title} width={48} height={48} className="h-12 w-12 rounded-lg object-cover" />
@@ -215,14 +224,16 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
                 <Button size="icon" variant="ghost" className="text-slate-500 hover:text-slate-700" onClick={() => onPlayTrack(track)}>
                   <Play className="h-4 w-4" />
                 </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="text-slate-500 hover:text-red-500"
-                  onClick={() => onRemoveTrack(track.id, playlist.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {canModify && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="text-slate-500 hover:text-red-500"
+                    onClick={() => onRemoveTrack(track.id, playlist.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           ))

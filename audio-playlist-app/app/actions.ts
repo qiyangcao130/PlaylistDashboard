@@ -6,6 +6,7 @@ import { randomUUID } from "crypto";
 import { Buffer } from "node:buffer";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { clearSession, requireSession, setSession } from "@/lib/auth";
+import { requireModifyPermission } from "@/lib/permissions";
 import type { DashboardData } from "@/lib/types";
 import { fetchDashboardData } from "@/lib/data";
 import { SUPABASE_STORAGE_BUCKET, SUPABASE_STORAGE_PREFIX } from "@/lib/env";
@@ -85,6 +86,14 @@ const isFileLike = (value: unknown): value is FileLike => {
 
 export async function uploadTrackAction(prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const session = requireSession();
+  
+  // Check if user has permission to modify data
+  try {
+    requireModifyPermission(session.username);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Permission denied" };
+  }
+
   const supabase = createSupabaseServerClient();
   const parsedMeta = uploadSchema.safeParse({
     title: formData.get("title"),
@@ -195,6 +204,14 @@ const createPlaylistSchema = z.object({
 
 export async function deleteTrackAction(trackId: string): Promise<ActionResult> {
   const session = requireSession();
+  
+  // Check if user has permission to modify data
+  try {
+    requireModifyPermission(session.username);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Permission denied" };
+  }
+
   const supabase = createSupabaseServerClient();
 
   const { data: trackData, error: trackLookupError } = await supabase
@@ -243,6 +260,14 @@ export async function deleteTrackAction(trackId: string): Promise<ActionResult> 
 
 export async function createPlaylistAction(formData: FormData): Promise<ActionResult<{ playlistId: string }>> {
   const session = requireSession();
+  
+  // Check if user has permission to modify data
+  try {
+    requireModifyPermission(session.username);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Permission denied" };
+  }
+
   const supabase = createSupabaseServerClient();
   const parsed = createPlaylistSchema.safeParse({
     name: formData.get("name"),
@@ -273,6 +298,14 @@ export async function createPlaylistAction(formData: FormData): Promise<ActionRe
 
 export async function deletePlaylistAction(playlistId: string): Promise<ActionResult> {
   const session = requireSession();
+  
+  // Check if user has permission to modify data
+  try {
+    requireModifyPermission(session.username);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Permission denied" };
+  }
+
   const supabase = createSupabaseServerClient();
 
   const { error } = await supabase
@@ -291,6 +324,14 @@ export async function deletePlaylistAction(playlistId: string): Promise<ActionRe
 
 export async function addTrackToPlaylistAction(args: { playlistId: string; trackId: string }): Promise<ActionResult> {
   const session = requireSession();
+  
+  // Check if user has permission to modify data
+  try {
+    requireModifyPermission(session.username);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Permission denied" };
+  }
+
   const supabase = createSupabaseServerClient();
 
   const { data: playlist, error: playlistError } = await supabase
@@ -354,6 +395,14 @@ export async function addTrackToPlaylistAction(args: { playlistId: string; track
 
 export async function removeTrackFromPlaylistAction(args: { playlistId: string; trackId: string }): Promise<ActionResult> {
   const session = requireSession();
+  
+  // Check if user has permission to modify data
+  try {
+    requireModifyPermission(session.username);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Permission denied" };
+  }
+
   const supabase = createSupabaseServerClient();
 
   const { error } = await supabase
@@ -371,7 +420,15 @@ export async function removeTrackFromPlaylistAction(args: { playlistId: string; 
 }
 
 export async function reorderPlaylistTracksAction(args: { playlistId: string; trackIds: string[] }): Promise<ActionResult> {
-  requireSession();
+  const session = requireSession();
+  
+  // Check if user has permission to modify data
+  try {
+    requireModifyPermission(session.username);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Permission denied" };
+  }
+
   const supabase = createSupabaseServerClient();
 
   const updates: Database["public"]["Tables"]["playlist_items"]["Insert"][] = args.trackIds.map((trackId, index) => ({
@@ -400,6 +457,14 @@ const updatePlaylistSchema = z.object({
 
 export async function updatePlaylistMetadataAction(formData: FormData): Promise<ActionResult> {
   const session = requireSession();
+  
+  // Check if user has permission to modify data
+  try {
+    requireModifyPermission(session.username);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Permission denied" };
+  }
+
   const supabase = createSupabaseServerClient();
 
   const parsed = updatePlaylistSchema.safeParse({

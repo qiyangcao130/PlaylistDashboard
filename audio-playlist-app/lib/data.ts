@@ -1,5 +1,6 @@
 import { SUPABASE_STORAGE_BUCKET } from "./env";
 import { createSupabaseServerClient } from "./supabase-server";
+import { canModifyData } from "./permissions";
 import type { DashboardData, PlaylistWithTracks, Track } from "./types";
 import type { Database } from "./database.types";
 
@@ -68,7 +69,8 @@ export async function fetchDashboardData(username: string): Promise<DashboardDat
   if (playlistIds.length === 0) {
     return {
       tracks,
-      playlists: []
+      playlists: [],
+      canModify: canModifyData(username)
     };
   }
 
@@ -106,6 +108,7 @@ export async function fetchDashboardData(username: string): Promise<DashboardDat
 
   return {
     tracks,
-    playlists
+    playlists,
+    canModify: canModifyData(username)
   };
 }

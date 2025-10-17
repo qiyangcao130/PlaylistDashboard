@@ -42,6 +42,7 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
 
   const playlists = initialData.playlists;
   const tracks = initialData.tracks;
+  const canModify = initialData.canModify;
 
   useEffect(() => {
     if (!activePlaylistId && playlists.length > 0) {
@@ -116,6 +117,11 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
   };
 
   const handleAddToPlaylist = (trackId: string, playlistId: string) => {
+    if (!canModify) {
+      toast.error("You do not have permission to modify data. This account is read-only.");
+      return;
+    }
+
     startTransition(() => {
       addTrackToPlaylistAction({ trackId, playlistId }).then((result: ActionResult) => {
         if (result.success) {
@@ -133,6 +139,11 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
   };
 
   const handleDeleteTrack = (trackId: string) => {
+    if (!canModify) {
+      toast.error("You do not have permission to modify data. This account is read-only.");
+      return;
+    }
+
     if (currentTrack?.id === trackId) {
       setCurrentTrack(null);
       setIsPlaying(false);
@@ -151,6 +162,11 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
   };
 
   const handleRemoveTrack = (trackId: string, playlistId: string) => {
+    if (!canModify) {
+      toast.error("You do not have permission to modify data. This account is read-only.");
+      return;
+    }
+
     startTransition(() => {
   removeTrackFromPlaylistAction({ playlistId, trackId }).then((result: ActionResult) => {
         if (result.success) {
@@ -164,6 +180,11 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
   };
 
   const handleReorderTracks = (playlistId: string, trackIds: string[]) => {
+    if (!canModify) {
+      toast.error("You do not have permission to modify data. This account is read-only.");
+      return;
+    }
+
     startTransition(() => {
   reorderPlaylistTracksAction({ playlistId, trackIds }).then((result: ActionResult) => {
         if (result.success) {
@@ -176,6 +197,11 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
   };
 
   const handleUpdatePlaylist = (playlistId: string, updates: { name?: string; description?: string | null }) => {
+    if (!canModify) {
+      toast.error("You do not have permission to modify data. This account is read-only.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("playlistId", playlistId);
     if (updates.name !== undefined) {
@@ -208,6 +234,11 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
   };
 
   const handleCreatePlaylist = (payload: { name: string; description?: string }) => {
+    if (!canModify) {
+      toast.error("You do not have permission to modify data. This account is read-only.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("name", payload.name);
     if (payload.description) {
@@ -231,6 +262,11 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
   };
 
   const handleDeletePlaylist = (playlistId: string) => {
+    if (!canModify) {
+      toast.error("You do not have permission to modify data. This account is read-only.");
+      return;
+    }
+
     startTransition(() => {
       deletePlaylistAction(playlistId).then((result: ActionResult) => {
         if (result.success) {
@@ -259,7 +295,10 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
       <header className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 shadow-sm backdrop-blur lg:px-8">
         <div>
           <h1 className="text-lg font-semibold">Playlist Dashboard</h1>
-          <p className="text-xs text-slate-500">Signed in as {username}</p>
+          <p className="text-xs text-slate-500">
+            Signed in as {username}
+            {!canModify && <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">READ-ONLY</span>}
+          </p>
         </div>
         <Button variant="ghost" size="sm" onClick={handleLogout} disabled={isPending}>
           Log out
@@ -281,6 +320,7 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
                 onPlayTrack={handlePlayTrack}
                 onAddToPlaylist={handleAddToPlaylist}
                 onDeleteTrack={handleDeleteTrack}
+                canModify={canModify}
               />
             </TabsContent>
             <TabsContent value="playlists">
@@ -290,11 +330,19 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
                 onSelectPlaylist={handleSelectPlaylist}
                 onCreatePlaylist={handleCreatePlaylist}
                 isBusy={isPending}
+                canModify={canModify}
               />
             </TabsContent>
             <TabsContent value="upload">
               <div className="p-4">
-                <UploadPanel />
+                {canModify ? (
+                  <UploadPanel />
+                ) : (
+                  <div className="flex h-64 flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+                    <p className="text-lg font-semibold text-slate-700">Upload Disabled</p>
+                    <p className="mt-2 text-sm text-slate-500">This account has read-only access.</p>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
@@ -309,6 +357,7 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
                   onReorderTracks={handleReorderTracks}
                   onUpdatePlaylist={handleUpdatePlaylist}
                   onDeletePlaylist={handleDeletePlaylist}
+                  canModify={canModify}
                 />
               ) : (
                 <p className="text-sm text-slate-500">Select a playlist to view its details.</p>
@@ -325,8 +374,16 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
               onPlayTrack={handlePlayTrack}
               onAddToPlaylist={handleAddToPlaylist}
               onDeleteTrack={handleDeleteTrack}
+              canModify={canModify}
             />
-            <UploadPanel />
+            {canModify ? (
+              <UploadPanel />
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+                <p className="text-sm font-semibold text-slate-700">Upload Disabled</p>
+                <p className="mt-1 text-xs text-slate-500">Read-only access</p>
+              </div>
+            )}
           </div>
           <div className="overflow-y-auto">
             <PlaylistsPanel
@@ -335,6 +392,7 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
               onSelectPlaylist={setActivePlaylistId}
               onCreatePlaylist={handleCreatePlaylist}
               isBusy={isPending}
+              canModify={canModify}
             />
           </div>
           <div className="overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -346,6 +404,7 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
                 onReorderTracks={handleReorderTracks}
                 onUpdatePlaylist={handleUpdatePlaylist}
                 onDeletePlaylist={handleDeletePlaylist}
+                canModify={canModify}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-slate-500">

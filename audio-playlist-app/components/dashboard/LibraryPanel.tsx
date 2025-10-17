@@ -20,9 +20,10 @@ interface LibraryPanelProps {
   onPlayTrack(track: Track): void;
   onAddToPlaylist(trackId: string, playlistId: string): void;
   onDeleteTrack(trackId: string): void;
+  canModify?: boolean;
 }
 
-export function LibraryPanel({ tracks, playlists, onPlayTrack, onAddToPlaylist, onDeleteTrack }: LibraryPanelProps) {
+export function LibraryPanel({ tracks, playlists, onPlayTrack, onAddToPlaylist, onDeleteTrack, canModify = true }: LibraryPanelProps) {
   const sortedTracks = useMemo(() => [...tracks].sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()), [tracks]);
 
   const formatDuration = (seconds: number | null) => {
@@ -79,19 +80,20 @@ export function LibraryPanel({ tracks, playlists, onPlayTrack, onAddToPlaylist, 
                   <Play className="mr-1.5 h-4 w-4" />
                   Play
                 </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="border-slate-200 text-slate-700">
-                      <Plus className="mr-1.5 h-4 w-4" />
-                      Add
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-48 text-slate-700">
-                    <DropdownMenuLabel className="text-xs uppercase tracking-wide text-slate-500">
-                      Add to playlist
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {playlists.length === 0 ? (
+                {canModify && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="border-slate-200 text-slate-700">
+                        <Plus className="mr-1.5 h-4 w-4" />
+                        Add
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48 text-slate-700">
+                      <DropdownMenuLabel className="text-xs uppercase tracking-wide text-slate-500">
+                        Add to playlist
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {playlists.length === 0 ? (
                       <DropdownMenuItem disabled className="text-slate-400">
                         No playlists yet
                       </DropdownMenuItem>
@@ -108,15 +110,18 @@ export function LibraryPanel({ tracks, playlists, onPlayTrack, onAddToPlaylist, 
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
-                  onClick={() => onDeleteTrack(track.id)}
-                >
-                  <Trash2 className="mr-1.5 h-4 w-4" />
-                  Delete
-                </Button>
+                )}
+                {canModify && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                    onClick={() => onDeleteTrack(track.id)}
+                  >
+                    <Trash2 className="mr-1.5 h-4 w-4" />
+                    Delete
+                  </Button>
+                )}
               </div>
             </div>
           </article>

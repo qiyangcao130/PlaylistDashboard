@@ -15,9 +15,10 @@ interface PlaylistsPanelProps {
   onSelectPlaylist(playlistId: string): void;
   onCreatePlaylist?(payload: { name: string; description?: string }): Promise<void> | void;
   isBusy?: boolean;
+  canModify?: boolean;
 }
 
-export function PlaylistsPanel({ playlists, activePlaylistId, onSelectPlaylist, onCreatePlaylist, isBusy = false }: PlaylistsPanelProps) {
+export function PlaylistsPanel({ playlists, activePlaylistId, onSelectPlaylist, onCreatePlaylist, isBusy = false, canModify = true }: PlaylistsPanelProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -51,13 +52,15 @@ export function PlaylistsPanel({ playlists, activePlaylistId, onSelectPlaylist, 
           <ListMusic className="h-5 w-5 text-purple-500" />
           <h2 className="text-lg font-semibold">Playlists</h2>
         </div>
-        <Button size="sm" variant={showCreateForm ? "secondary" : "outline"} onClick={() => setShowCreateForm((value) => !value)} disabled={isBusy}>
-          <Plus className="mr-1.5 h-4 w-4" />
-          {showCreateForm ? "Cancel" : "New playlist"}
-        </Button>
+        {canModify && (
+          <Button size="sm" variant={showCreateForm ? "secondary" : "outline"} onClick={() => setShowCreateForm((value) => !value)} disabled={isBusy}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            {showCreateForm ? "Cancel" : "New playlist"}
+          </Button>
+        )}
       </header>
 
-      {showCreateForm ? (
+      {showCreateForm && canModify ? (
         <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="space-y-2">
             <label className="text-xs font-medium uppercase tracking-wide text-slate-500" htmlFor="playlist-name">
