@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { ListMusic, Plus } from "lucide-react";
+import { ListMusic, Plus, Play } from "lucide-react";
 import type { PlaylistWithTracks } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,13 @@ interface PlaylistsPanelProps {
   playlists: PlaylistWithTracks[];
   activePlaylistId: string | null;
   onSelectPlaylist(playlistId: string): void;
+  onPlayPlaylist?(playlistId: string): void;
   onCreatePlaylist?(payload: { name: string; description?: string }): Promise<void> | void;
   isBusy?: boolean;
   canModify?: boolean;
 }
 
-export function PlaylistsPanel({ playlists, activePlaylistId, onSelectPlaylist, onCreatePlaylist, isBusy = false, canModify = true }: PlaylistsPanelProps) {
+export function PlaylistsPanel({ playlists, activePlaylistId, onSelectPlaylist, onPlayPlaylist, onCreatePlaylist, isBusy = false, canModify = true }: PlaylistsPanelProps) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -89,26 +90,44 @@ export function PlaylistsPanel({ playlists, activePlaylistId, onSelectPlaylist, 
         {playlists.map((playlist) => {
           const isActive = playlist.id === activePlaylistId;
           return (
-            <button
+            <div
               key={playlist.id}
-              onClick={() => onSelectPlaylist(playlist.id)}
               className={cn(
-                "w-full rounded-xl border p-4 text-left transition",
+                "flex w-full items-center gap-2 rounded-xl border p-4 transition",
                 isActive
                   ? "border-transparent bg-primary text-primary-foreground shadow-md"
                   : "border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-100"
               )}
             >
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold">{playlist.name}</h3>
-                  {playlist.description ? <p className={cn("text-xs", isActive ? "text-white/80" : "text-slate-500")}>{playlist.description}</p> : null}
+              <button
+                onClick={() => onSelectPlaylist(playlist.id)}
+                className="flex-1 text-left"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-semibold">{playlist.name}</h3>
+                    {playlist.description ? <p className={cn("text-xs", isActive ? "text-white/80" : "text-slate-500")}>{playlist.description}</p> : null}
+                  </div>
+                  <span className={cn("text-xs", isActive ? "text-white/80" : "text-slate-500")}>
+                    {playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}
+                  </span>
                 </div>
-                <span className={cn("text-xs", isActive ? "text-white/80" : "text-slate-500")}>
-                  {playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}
-                </span>
-              </div>
-            </button>
+              </button>
+              {playlist.trackIds.length > 0 && (
+                <Button
+                  size="icon"
+                  variant={isActive ? "secondary" : "ghost"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPlayPlaylist?.(playlist.id);
+                  }}
+                  className={cn("h-8 w-8 flex-shrink-0", isActive && "bg-white/20 hover:bg-white/30")}
+                  title="Play playlist"
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           );
         })}
         {playlists.length === 0 ? <p className="text-sm text-slate-500">Create your first playlist to get started.</p> : null}

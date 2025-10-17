@@ -98,24 +98,14 @@ export function AudioPlayer({ track, isPlaying, onPlayPause, onNext, onPrevious 
         onEnded={onNext}
         hidden
       />
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-3">
-          {track?.coverArtUrl ? (
-            <Image src={track.coverArtUrl} alt={track.title} width={56} height={56} className="hidden h-14 w-14 rounded-lg object-cover lg:block" />
-          ) : (
-            <div className="hidden h-14 w-14 items-center justify-center rounded-lg bg-slate-100 text-slate-500 lg:flex">
-              <Play className="h-5 w-5" />
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-900">{track?.title ?? "No track selected"}</p>
-            <p className="truncate text-xs text-slate-500">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-1 flex-col items-center gap-2 lg:max-w-2xl">
+          <div className="w-full">
+            <p className="truncate text-center text-sm font-semibold text-slate-900">{track?.title ?? "No track selected"}</p>
+            <p className="truncate text-center text-xs text-slate-500">
               {track ? [track.artist, track.album].filter(Boolean).join(" • ") || "Unknown artist" : "Choose a track to begin playback"}
             </p>
           </div>
-        </div>
-
-        <div className="flex flex-1 flex-col items-center gap-2 lg:max-w-xl">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={onPrevious} disabled={!track}>
               <SkipBack className="h-4 w-4" />
@@ -138,11 +128,20 @@ export function AudioPlayer({ track, isPlaying, onPlayPause, onNext, onPrevious 
           </div>
         </div>
 
-        <div className="hidden items-center gap-2 lg:flex">
-          <Button variant="ghost" size="icon" onClick={toggleMute} className={cn(isMuted && "text-blue-400")}>
-            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-          </Button>
-          <Slider value={[isMuted ? 0 : volume]} onValueChange={(value) => setVolume(value[0] ?? 0)} className="w-32" disabled={!track} />
+        <div className="hidden items-center gap-3 lg:flex">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={toggleMute} className={cn(isMuted && "text-blue-400")}>
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </Button>
+            <Slider value={[isMuted ? 0 : volume]} onValueChange={(value) => setVolume(value[0] ?? 0)} className="w-24" disabled={!track} />
+          </div>
+          {track?.coverArtUrl ? (
+            <Image src={track.coverArtUrl} alt={track.title} width={80} height={80} className="h-20 w-20 rounded-lg object-cover shadow-md" />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-slate-100 text-slate-500 shadow-md">
+              <Play className="h-8 w-8" />
+            </div>
+          )}
         </div>
       </div>
     </footer>

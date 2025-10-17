@@ -74,6 +74,13 @@ export function UploadPanel() {
     setSelectedFileName(file ? file.name : "");
     
     if (file) {
+      // Auto-populate track title from filename (without extension)
+      const titleInput = formRef.current?.querySelector('input[name="title"]') as HTMLInputElement;
+      if (titleInput && !titleInput.value) {
+        const filenameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+        titleInput.value = filenameWithoutExt;
+      }
+
       try {
         const duration = await extractAudioDuration(file);
         setAudioDuration(duration);
@@ -96,13 +103,12 @@ export function UploadPanel() {
   };
 
   return (
-    <div className="flex h-full flex-col gap-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <header className="space-y-1">
+    <div className="flex h-full flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <header>
         <h2 className="text-lg font-semibold text-slate-900">Upload</h2>
-        <p className="text-xs text-slate-500">Audio files are stored in Supabase Storage under your account.</p>
       </header>
-      <form ref={formRef} action={formAction} className="flex flex-1 flex-col gap-4">
-        <div className="grid grid-cols-1 gap-3">
+      <form ref={formRef} action={formAction} className="flex flex-1 flex-col gap-3">
+        <div className="grid grid-cols-1 gap-2">
           <Input name="title" placeholder="Track title" required />
           <Input name="artist" placeholder="Artist" />
           <Input name="album" placeholder="Album" />
@@ -118,7 +124,7 @@ export function UploadPanel() {
             className="sr-only"
             onChange={handleFileChange}
           />
-          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center">
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-4 text-center">
             <Button
               type="button"
               variant="secondary"
@@ -147,7 +153,7 @@ export function UploadPanel() {
             className="sr-only"
             onChange={handleCoverChange}
           />
-          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center">
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-4 text-center">
             <Button
               type="button"
               variant="secondary"
@@ -164,7 +170,6 @@ export function UploadPanel() {
           </div>
         </div>
         <SubmitButton />
-        <p className="text-[10px] text-slate-500">For production deployments, replace mock notes with waveform analysis or tags.</p>
       </form>
     </div>
   );

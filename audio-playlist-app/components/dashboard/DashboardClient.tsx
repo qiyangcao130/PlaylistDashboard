@@ -81,6 +81,25 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
     setPlaylistSheetOpen(false);
   };
 
+  const handlePlayPlaylist = (playlistId: string) => {
+    const playlist = playlists.find((p) => p.id === playlistId);
+    if (!playlist || playlist.trackIds.length === 0) {
+      toast.error("This playlist has no tracks.");
+      return;
+    }
+    
+    // Find the first track in the playlist
+    const firstTrack = playlist.tracks[0];
+    if (!firstTrack) {
+      toast.error("Unable to load playlist tracks.");
+      return;
+    }
+
+    // Set the active playlist and play the first track
+    setActivePlaylistId(playlistId);
+    handlePlayTrack(firstTrack);
+  };
+
   const togglePlayPause = () => {
     if (!currentTrack && queue.length > 0) {
       setCurrentTrack(queue[0]);
@@ -293,12 +312,9 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-white via-slate-50 to-slate-100 text-slate-900">
       <header className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 shadow-sm backdrop-blur lg:px-8">
-        <div>
-          <h1 className="text-lg font-semibold">Playlist Dashboard</h1>
-          <p className="text-xs text-slate-500">
-            Signed in as {username}
-            {!canModify && <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">READ-ONLY</span>}
-          </p>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-semibold">Hi, {username}</h1>
+          {!canModify && <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">READ-ONLY</span>}
         </div>
         <Button variant="ghost" size="sm" onClick={handleLogout} disabled={isPending}>
           Log out
@@ -307,7 +323,7 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
 
       <main className="flex-1 pb-28 lg:pb-40">
         <div className="lg:hidden">
-          <Tabs defaultValue="library" className="w-full">
+          <Tabs defaultValue="playlists" className="w-full">
             <TabsList className="mx-4 mt-4 w-[calc(100%-2rem)]">
               <TabsTrigger value="library">Library</TabsTrigger>
               <TabsTrigger value="playlists">Playlists</TabsTrigger>
@@ -328,6 +344,7 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
                 playlists={playlists}
                 activePlaylistId={activePlaylistId}
                 onSelectPlaylist={handleSelectPlaylist}
+                onPlayPlaylist={handlePlayPlaylist}
                 onCreatePlaylist={handleCreatePlaylist}
                 isBusy={isPending}
                 canModify={canModify}
@@ -390,6 +407,7 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
               playlists={playlists}
               activePlaylistId={activePlaylistId}
               onSelectPlaylist={setActivePlaylistId}
+              onPlayPlaylist={handlePlayPlaylist}
               onCreatePlaylist={handleCreatePlaylist}
               isBusy={isPending}
               canModify={canModify}
