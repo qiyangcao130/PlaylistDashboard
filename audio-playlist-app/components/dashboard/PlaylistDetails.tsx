@@ -119,30 +119,6 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
               )}
             </div>
           )}
-          {canModify && (
-            <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" variant="destructive" className="gap-2">
-                <Trash2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Delete Playlist</span>
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Playlist?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete "{playlist.name}"? This action cannot be undone. All tracks will be removed from this playlist.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDeletePlaylist(playlist.id)} className="bg-red-600 hover:bg-red-700">
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          )}
         </div>
         <div>
           {isEditingDescription ? (
@@ -162,12 +138,37 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
               </div>
             </div>
           ) : (
-            <div className="flex items-start gap-2 text-sm text-slate-600">
-              <p>{playlist.description || "No description yet."}</p>
+            <div className="flex items-start justify-between gap-4 text-sm text-slate-600">
+              <div className="flex items-start gap-2">
+                <p>{playlist.description || "No description yet."}</p>
+                {canModify && (
+                  <Button size="icon" variant="ghost" className="text-slate-400 hover:text-slate-600" onClick={() => setIsEditingDescription(true)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
               {canModify && (
-                <Button size="icon" variant="ghost" className="text-slate-400 hover:text-slate-600" onClick={() => setIsEditingDescription(true)}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="icon" className="shrink-0">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Playlist?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{playlist.name}"? This action cannot be undone. All tracks will be removed from this playlist.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onDeletePlaylist(playlist.id)} className="bg-red-600 hover:bg-red-700">
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </div>
           )}
