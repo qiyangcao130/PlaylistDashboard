@@ -112,6 +112,7 @@ export function UploadPanel() {
           <Input name="title" placeholder="Track title" required />
           <Input name="artist" placeholder="Artist" />
           <Input name="album" placeholder="Album" />
+          <Input name="version" placeholder="Version (e.g., Radio Edit, Acoustic)" />
           {/* Hidden input for duration */}
           <input ref={durationInputRef} type="hidden" name="duration" value={audioDuration ?? ""} />
           <input

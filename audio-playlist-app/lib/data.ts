@@ -48,18 +48,22 @@ export async function fetchDashboardData(username: string): Promise<DashboardDat
         throw new Error(`Failed to sign URL for track ${row.id}: ${signedError.message}`);
       }
 
+      // Type assertion to include version field until database types are regenerated
+      const rowWithVersion = row as TrackRow & { version?: string | null };
+
       return {
-        id: row.id,
-        username: row.username,
-        title: row.title,
-        artist: row.artist,
-        album: row.album,
-        coverArtUrl: row.cover_art_url,
-        duration: row.duration_seconds,
+        id: rowWithVersion.id,
+        username: rowWithVersion.username,
+        title: rowWithVersion.title,
+        artist: rowWithVersion.artist,
+        album: rowWithVersion.album,
+        version: rowWithVersion.version,
+        coverArtUrl: rowWithVersion.cover_art_url,
+        duration: rowWithVersion.duration_seconds,
         url: isMissingAsset ? "" : signedUrl,
-        contentType: row.content_type,
-        fileSize: row.file_size,
-        uploadedAt: row.created_at
+        contentType: rowWithVersion.content_type,
+        fileSize: rowWithVersion.file_size,
+        uploadedAt: rowWithVersion.created_at
       };
     })
   );

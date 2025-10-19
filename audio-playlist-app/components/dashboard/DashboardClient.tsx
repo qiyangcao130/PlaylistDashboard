@@ -112,12 +112,23 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
   const playNext = () => {
     if (queue.length === 0) return;
     if (!currentTrack) {
-      setCurrentTrack(queue[0]);
-      setIsPlaying(true);
+      const firstTrack = queue[0];
+      if (firstTrack && firstTrack.url) {
+        setCurrentTrack(firstTrack);
+        setIsPlaying(true);
+      } else {
+        toast.error("Track file is unavailable. Please re-upload the audio.");
+      }
       return;
     }
-  const currentIndex = queue.findIndex((track: Track) => track.id === currentTrack.id);
+    const currentIndex = queue.findIndex((track: Track) => track.id === currentTrack.id);
     const nextTrack = queue[(currentIndex + 1) % queue.length];
+    if (!nextTrack) return;
+    
+    if (!nextTrack.url) {
+      toast.error("Track file is unavailable. Please re-upload the audio.");
+      return;
+    }
     setCurrentTrack(nextTrack);
     setIsPlaying(true);
   };
@@ -125,13 +136,26 @@ export function DashboardClient({ initialData, username }: DashboardClientProps)
   const playPrevious = () => {
     if (queue.length === 0) return;
     if (!currentTrack) {
-      setCurrentTrack(queue[0]);
-      setIsPlaying(true);
+      const firstTrack = queue[0];
+      if (firstTrack && firstTrack.url) {
+        setCurrentTrack(firstTrack);
+        setIsPlaying(true);
+      } else {
+        toast.error("Track file is unavailable. Please re-upload the audio.");
+      }
       return;
     }
-  const currentIndex = queue.findIndex((track: Track) => track.id === currentTrack.id);
+    const currentIndex = queue.findIndex((track: Track) => track.id === currentTrack.id);
     const previousIndex = (currentIndex - 1 + queue.length) % queue.length;
     setCurrentTrack(queue[previousIndex]);
+    const previousTrack = queue[previousIndex];
+    if (!previousTrack) return;
+    
+    if (!previousTrack.url) {
+      toast.error("Track file is unavailable. Please re-upload the audio.");
+      return;
+    }
+    setCurrentTrack(previousTrack);
     setIsPlaying(true);
   };
 

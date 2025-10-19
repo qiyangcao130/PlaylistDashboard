@@ -62,7 +62,8 @@ export async function logoutAction() {
 const uploadSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
   artist: z.string().trim().optional(),
-  album: z.string().trim().optional()
+  album: z.string().trim().optional(),
+  version: z.string().trim().optional()
 });
 
 export interface UploadTrackResult extends ActionResult {
@@ -98,7 +99,8 @@ export async function uploadTrackAction(prev: ActionResult, formData: FormData):
   const parsedMeta = uploadSchema.safeParse({
     title: formData.get("title"),
     artist: formData.get("artist") ?? undefined,
-    album: formData.get("album") ?? undefined
+    album: formData.get("album") ?? undefined,
+    version: formData.get("version") ?? undefined
   });
 
   if (!parsedMeta.success) {
@@ -180,8 +182,11 @@ export async function uploadTrackAction(prev: ActionResult, formData: FormData):
     duration_seconds: duration
   };
 
+  // Add version field if provided (type assertion until database types are regenerated)
+  const payloadWithVersion = { ...audioPayload, version: parsedMeta.data.version ?? null } as any;
+
   // Supabase client schema typing still resolving in generated types, so fall back to any for now.
-  const { error: insertError } = await (supabase.from("audio_files") as any).insert(audioPayload);
+  const { error: insertError } = await (supabase.from("audio_files") as any).insert(payloadWithVersion);
 
   if (insertError) {
     // Clean up uploaded files if database insert fails

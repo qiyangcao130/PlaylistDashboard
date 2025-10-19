@@ -4,6 +4,7 @@ export interface Track {
   title: string;
   artist?: string | null;
   album?: string | null;
+  version?: string | null;
   coverArtUrl?: string | null;
   duration: number | null;
   url: string;

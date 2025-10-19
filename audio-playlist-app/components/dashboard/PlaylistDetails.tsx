@@ -193,11 +193,11 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
               onDrop={handleDrop}
               onDragEnd={handleDragEnd}
               className={cn(
-                "group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:border-blue-200 hover:bg-blue-50",
+                "group flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:border-blue-200 hover:bg-blue-50",
                 dragOverIndex === index && draggedIndex !== null ? "border-blue-300" : ""
               )}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex flex-shrink-0 items-center gap-3">
                 <span className="flex h-10 w-6 items-center justify-center text-xs text-slate-500">{index + 1}</span>
                 {canModify && (
                   <button className="hidden rounded-md p-2 text-slate-400 transition hover:bg-slate-200 hover:text-slate-600 lg:flex">
@@ -206,22 +206,25 @@ export function PlaylistDetails({ playlist, onPlayTrack, onRemoveTrack, onReorde
                 )}
               </div>
               {track.coverArtUrl ? (
-                <Image src={track.coverArtUrl} alt={track.title} width={48} height={48} className="h-12 w-12 rounded-lg object-cover" />
+                <Image src={track.coverArtUrl} alt={track.title} width={48} height={48} className="h-12 w-12 flex-shrink-0 rounded-lg object-cover" />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
                   <Play className="h-5 w-5" />
                 </div>
               )}
-              <div className="flex flex-1 items-center justify-between gap-4">
-                <div className="flex min-w-0 flex-col gap-1">
-                  <span className="truncate text-sm font-medium text-slate-900">{track.title}</span>
+              <div className="flex flex-1 items-center justify-between gap-4 min-w-0">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="truncate text-sm font-medium text-slate-900">
+                    {track.title}
+                    {track.version && <span className="font-normal text-slate-600"> ({track.version})</span>}
+                  </span>
                   <span className="truncate text-xs text-slate-500">
                     {[track.artist, track.album].filter(Boolean).join(" • ") || "Unknown artist"}
                   </span>
                 </div>
-                <span className="text-xs text-slate-500">{formatDuration(track.duration)}</span>
+                <span className="flex-shrink-0 text-xs text-slate-500">{formatDuration(track.duration)}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-shrink-0 items-center gap-2">
                 <Button size="icon" variant="ghost" className="text-slate-500 hover:text-slate-700" onClick={() => onPlayTrack(track)}>
                   <Play className="h-4 w-4" />
                 </Button>

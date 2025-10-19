@@ -17,6 +17,7 @@ create table if not exists public.audio_files (
     artist text,
     album text,
     cover_art_url text,
+    version text,
     storage_path text not null,
     content_type text,
     file_size bigint,

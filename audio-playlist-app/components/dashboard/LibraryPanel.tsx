@@ -66,7 +66,10 @@ export function LibraryPanel({ tracks, playlists, onPlayTrack, onAddToPlaylist, 
               )}
               <div className="flex flex-1 flex-col gap-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-medium text-slate-900">{track.title}</span>
+                  <span className="truncate text-sm font-medium text-slate-900">
+                    {track.title}
+                    {track.version && <span className="font-normal text-slate-600"> ({track.version})</span>}
+                  </span>
                   <span className="text-xs text-slate-500">{formatDuration(track.duration)}</span>
                 </div>
                 <span className="text-xs text-slate-500">

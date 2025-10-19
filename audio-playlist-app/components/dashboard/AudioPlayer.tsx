@@ -33,15 +33,8 @@ export function AudioPlayer({ track, isPlaying, onPlayPause, onNext, onPrevious 
       audio.load();
       setCurrentTime(0);
       setDuration(0);
-      if (isPlaying) {
-        void audio.play().catch((error) => {
-          audio.pause();
-          toast.error("Could not start playback. Please check the audio file.");
-          console.error("Audio playback error", error);
-        });
-      }
     }
-  }, [track, isPlaying]);
+  }, [track]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -52,6 +45,7 @@ export function AudioPlayer({ track, isPlaying, onPlayPause, onNext, onPrevious 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    
     if (isPlaying && track) {
       void audio.play().catch((error) => {
         audio.pause();
@@ -59,7 +53,11 @@ export function AudioPlayer({ track, isPlaying, onPlayPause, onNext, onPrevious 
         console.error("Audio playback error", error);
       });
     } else {
-      audio.pause();
+      try {
+        audio.pause();
+      } catch (error) {
+        console.error("Audio pause error", error);
+      }
     }
   }, [isPlaying, track]);
 
@@ -101,7 +99,16 @@ export function AudioPlayer({ track, isPlaying, onPlayPause, onNext, onPrevious 
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-col items-center gap-2 lg:max-w-2xl">
           <div className="w-full">
-            <p className="truncate text-center text-sm font-semibold text-slate-900">{track?.title ?? "No track selected"}</p>
+            <p className="truncate text-center text-sm font-semibold text-slate-900">
+              {track ? (
+                <>
+                  {track.title}
+                  {track.version && <span className="font-normal text-slate-600"> ({track.version})</span>}
+                </>
+              ) : (
+                "No track selected"
+              )}
+            </p>
             <p className="truncate text-center text-xs text-slate-500">
               {track ? [track.artist, track.album].filter(Boolean).join(" • ") || "Unknown artist" : "Choose a track to begin playback"}
             </p>
