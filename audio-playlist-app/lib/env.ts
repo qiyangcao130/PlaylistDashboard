@@ -10,8 +10,13 @@ const requireEnv = (name: string): string => {
 
 export const SUPABASE_URL = requireEnv("SUPABASE_URL");
 export const SUPABASE_SERVICE_ROLE_KEY = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+export const SUPABASE_ANON_KEY = requireEnv("SUPABASE_ANON_KEY");
 export const SUPABASE_STORAGE_BUCKET = requireEnv("SUPABASE_STORAGE_BUCKET");
 export const SUPABASE_STORAGE_PREFIX = process.env.SUPABASE_STORAGE_PREFIX ?? requireEnv("SUPABASE_STORAGE_BUCKET");
+
+// Storage folder names
+export const STORAGE_AUDIO_FOLDER = process.env.STORAGE_AUDIO_FOLDER ?? "audio";
+export const STORAGE_COVER_FOLDER = process.env.STORAGE_COVER_FOLDER ?? "cover";
 
 // Read-only user configuration
 // Format: "userA,userB,userC" - comma-separated list of users who have read-only access

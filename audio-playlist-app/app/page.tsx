@@ -4,7 +4,7 @@ import { LoginForm } from "@/components/dashboard/LoginForm";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 
 export default async function HomePage() {
-  const session = getSession();
+  const session = await getSession();
 
   if (!session) {
     return <LoginForm />;

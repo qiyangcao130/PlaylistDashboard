@@ -51,6 +51,22 @@ export async function fetchDashboardData(username: string): Promise<DashboardDat
       // Type assertion to include version field until database types are regenerated
       const rowWithVersion = row as TrackRow & { version?: string | null };
 
+      // Generate signed URL for cover art if it exists
+      let coverArtSignedUrl: string | null = null;
+      if (rowWithVersion.cover_art_url) {
+        // Check if it's a storage path (not a full URL)
+        if (!rowWithVersion.cover_art_url.startsWith('http')) {
+          const { data: coverSigned } = await supabase.storage
+            .from(SUPABASE_STORAGE_BUCKET)
+            .createSignedUrl(rowWithVersion.cover_art_url, 3600);
+          
+          coverArtSignedUrl = coverSigned?.signedUrl ?? null;
+        } else {
+          // Legacy: already a full URL
+          coverArtSignedUrl = rowWithVersion.cover_art_url;
+        }
+      }
+
       return {
         id: rowWithVersion.id,
         username: rowWithVersion.username,
@@ -58,7 +74,7 @@ export async function fetchDashboardData(username: string): Promise<DashboardDat
         artist: rowWithVersion.artist,
         album: rowWithVersion.album,
         version: rowWithVersion.version,
-        coverArtUrl: rowWithVersion.cover_art_url,
+        coverArtUrl: coverArtSignedUrl,
         duration: rowWithVersion.duration_seconds,
         url: isMissingAsset ? "" : signedUrl,
         contentType: rowWithVersion.content_type,

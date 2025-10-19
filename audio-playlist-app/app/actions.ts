@@ -9,7 +9,7 @@ import { clearSession, requireSession, setSession } from "@/lib/auth";
 import { requireModifyPermission } from "@/lib/permissions";
 import type { DashboardData } from "@/lib/types";
 import { fetchDashboardData } from "@/lib/data";
-import { SUPABASE_STORAGE_BUCKET, SUPABASE_STORAGE_PREFIX } from "@/lib/env";
+import { SUPABASE_STORAGE_BUCKET, STORAGE_AUDIO_FOLDER, STORAGE_COVER_FOLDER } from "@/lib/env";
 import type { Database } from "@/lib/database.types";
 
 export interface ActionResult<T = undefined> {
@@ -27,7 +27,9 @@ const loginSchema = z.object({
 });
 
 export async function loginAction(_: LoginState, formData: FormData): Promise<LoginState> {
-  const supabase = createSupabaseServerClient();
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-server");
+  const supabase = createSupabaseAdminClient();
+  
   const parsed = loginSchema.safeParse({ username: formData.get("username") });
 
   if (!parsed.success) {
@@ -35,6 +37,8 @@ export async function loginAction(_: LoginState, formData: FormData): Promise<Lo
   }
 
   const username = parsed.data.username;
+  
+  // Check if username exists in database
   const { data, error } = await supabase
     .from("username")
     .select("username")
@@ -49,12 +53,70 @@ export async function loginAction(_: LoginState, formData: FormData): Promise<Lo
     return { success: false, error: "That username is not registered" };
   }
 
-  setSession(username);
-  revalidatePath("/");
-  return { success: true };
+  try {
+    // Use Supabase signInWithPassword with a deterministic password based on username
+    // This is safe because we've already validated the user exists in our database
+    const email = `${username}@xx.com`;
+    const password = `${username}`;
+
+    // Try to sign in
+    let authResult = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    // If user doesn't exist in Auth, create them
+    if (authResult.error?.message.includes('Invalid login credentials')) {
+      const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          username: username
+        },
+      });
+
+      if (signUpError) {
+        console.error("Sign up error:", signUpError);
+        return { success: false, error: `Failed to create auth user: ${signUpError.message}` };
+      }
+
+      // Now sign in with the newly created user
+      authResult = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+    }
+
+    if (authResult.error) {
+      console.error("Auth error:", authResult.error);
+      return { success: false, error: `Authentication failed: ${authResult.error.message}` };
+    }
+
+    if (!authResult.data.session) {
+      return { success: false, error: "No session created" };
+    }
+
+    const { access_token, refresh_token, expires_in } = authResult.data.session;
+
+    // Store the session with JWT tokens
+    await setSession(username, access_token, refresh_token, expires_in || 3600);
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    console.error("Login error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Authentication failed" };
+  }
 }
 
 export async function logoutAction() {
+  const { createAuthenticatedClient } = await import("@/lib/auth");
+  const { supabase } = createAuthenticatedClient();
+  
+  // Sign out from Supabase
+  await supabase.auth.signOut();
+  
+  // Clear session cookies
   clearSession();
   revalidatePath("/");
 }
@@ -86,7 +148,7 @@ const isFileLike = (value: unknown): value is FileLike => {
 };
 
 export async function uploadTrackAction(prev: ActionResult, formData: FormData): Promise<ActionResult> {
-  const session = requireSession();
+  const session = await requireSession();
   
   // Check if user has permission to modify data
   try {
@@ -124,7 +186,7 @@ export async function uploadTrackAction(prev: ActionResult, formData: FormData):
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
   const extension = file.name.split(".").pop() ?? "audio";
-  const path = `${SUPABASE_STORAGE_PREFIX}/${randomUUID()}-${Date.now()}.${extension}`;
+  const path = `${STORAGE_AUDIO_FOLDER}/${randomUUID()}-${Date.now()}.${extension}`;
 
   const { error: uploadError } = await supabase.storage.from(SUPABASE_STORAGE_BUCKET).upload(path, buffer, {
     contentType: file.type,
@@ -151,7 +213,7 @@ export async function uploadTrackAction(prev: ActionResult, formData: FormData):
 
     const coverBuffer = Buffer.from(await coverFile.arrayBuffer());
     const coverExtension = coverFile.name.split(".").pop() ?? "jpg";
-    const coverPath = `${SUPABASE_STORAGE_PREFIX}/covers/${randomUUID()}-${Date.now()}.${coverExtension}`;
+    const coverPath = `${STORAGE_COVER_FOLDER}/${randomUUID()}-${Date.now()}.${coverExtension}`;
 
     const { error: coverUploadError } = await supabase.storage.from(SUPABASE_STORAGE_BUCKET).upload(coverPath, coverBuffer, {
       contentType: coverFile.type,
@@ -162,12 +224,12 @@ export async function uploadTrackAction(prev: ActionResult, formData: FormData):
     if (coverUploadError) {
       // Clean up audio file if cover upload fails
       await supabase.storage.from(SUPABASE_STORAGE_BUCKET).remove([path]);
-      return { success: false, error: `Failed to upload cover: ${coverUploadError.message}` };
+      return { success: false, error: `Failed to upload cover: ${coverUploadError.message}, ${coverPath}` };
     }
 
-    // Get public URL for the cover art
-    const { data: publicUrlData } = supabase.storage.from(SUPABASE_STORAGE_BUCKET).getPublicUrl(coverPath);
-    coverArtUrl = publicUrlData.publicUrl;
+    // Store the storage path (not a public URL) since bucket is private
+    // Signed URLs will be generated when fetching tracks
+    coverArtUrl = coverPath;
   }
 
   const audioPayload: Database["public"]["Tables"]["audio_files"]["Insert"] = {
@@ -208,7 +270,7 @@ const createPlaylistSchema = z.object({
 });
 
 export async function deleteTrackAction(trackId: string): Promise<ActionResult> {
-  const session = requireSession();
+  const session = await requireSession();
   
   // Check if user has permission to modify data
   try {
@@ -264,7 +326,7 @@ export async function deleteTrackAction(trackId: string): Promise<ActionResult> 
 }
 
 export async function createPlaylistAction(formData: FormData): Promise<ActionResult<{ playlistId: string }>> {
-  const session = requireSession();
+  const session = await requireSession();
   
   // Check if user has permission to modify data
   try {
@@ -302,7 +364,7 @@ export async function createPlaylistAction(formData: FormData): Promise<ActionRe
 }
 
 export async function deletePlaylistAction(playlistId: string): Promise<ActionResult> {
-  const session = requireSession();
+  const session = await requireSession();
   
   // Check if user has permission to modify data
   try {
@@ -328,7 +390,7 @@ export async function deletePlaylistAction(playlistId: string): Promise<ActionRe
 }
 
 export async function addTrackToPlaylistAction(args: { playlistId: string; trackId: string }): Promise<ActionResult> {
-  const session = requireSession();
+  const session = await requireSession();
   
   // Check if user has permission to modify data
   try {
@@ -382,11 +444,13 @@ export async function addTrackToPlaylistAction(args: { playlistId: string; track
 
   const nextPosition = typeof lastPositionData?.position === "number" ? lastPositionData.position + 1 : 0;
 
-  const playlistItemPayload: Database["public"]["Tables"]["playlist_items"]["Insert"] = {
+  // Type assertion needed until database types are regenerated to include username field
+  const playlistItemPayload = {
+    username: session.username,
     playlist_id: args.playlistId,
     audio_id: args.trackId,
     position: nextPosition
-  };
+  } as any;
 
   const { error: insertError } = await (supabase.from("playlist_items") as any).insert(playlistItemPayload);
 
@@ -399,7 +463,7 @@ export async function addTrackToPlaylistAction(args: { playlistId: string; track
 }
 
 export async function removeTrackFromPlaylistAction(args: { playlistId: string; trackId: string }): Promise<ActionResult> {
-  const session = requireSession();
+  const session = await requireSession();
   
   // Check if user has permission to modify data
   try {
@@ -425,7 +489,7 @@ export async function removeTrackFromPlaylistAction(args: { playlistId: string; 
 }
 
 export async function reorderPlaylistTracksAction(args: { playlistId: string; trackIds: string[] }): Promise<ActionResult> {
-  const session = requireSession();
+  const session = await requireSession();
   
   // Check if user has permission to modify data
   try {
@@ -436,11 +500,13 @@ export async function reorderPlaylistTracksAction(args: { playlistId: string; tr
 
   const supabase = createSupabaseServerClient();
 
-  const updates: Database["public"]["Tables"]["playlist_items"]["Insert"][] = args.trackIds.map((trackId, index) => ({
+  // Type assertion needed until database types are regenerated to include username field
+  const updates = args.trackIds.map((trackId, index) => ({
+    username: session.username,
     playlist_id: args.playlistId,
     audio_id: trackId,
     position: index
-  }));
+  })) as any[];
 
   const { error } = await (supabase.from("playlist_items") as any).upsert(updates, {
     onConflict: "playlist_id,audio_id"
@@ -461,7 +527,7 @@ const updatePlaylistSchema = z.object({
 });
 
 export async function updatePlaylistMetadataAction(formData: FormData): Promise<ActionResult> {
-  const session = requireSession();
+  const session = await requireSession();
   
   // Check if user has permission to modify data
   try {
@@ -508,7 +574,7 @@ export async function updatePlaylistMetadataAction(formData: FormData): Promise<
 
 export async function loadDashboardData(): Promise<ActionResult<DashboardData>> {
   try {
-    const session = requireSession();
+    const session = await requireSession();
     const data = await fetchDashboardData(session.username);
     return { success: true, data };
   } catch (error) {
